@@ -10,9 +10,10 @@ entry_points:
     parameters:
       img: {type: int, default: 640}
       batch_size: {type: int, default: 16}
-      epochs: {type: int, default: 100}
+      epochs: {type: int, default: 200}
       data: {type: string, default: "./data/yumi_cart.yaml"}
       weights: {type: string, default: "yolov5n.pt"}
+      workers: {type: int, default: 0}
       cfg: {type: string, default: ""}
     command: |
       python train.py \
@@ -21,4 +22,5 @@ entry_points:
         --epochs {epochs} \
         --data {data} \
         --weights {weights} \
-        --cfg {cfg} 
+        --workers {workers} \
+        --cfg {cfg}
