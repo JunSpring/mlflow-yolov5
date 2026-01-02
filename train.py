@@ -1026,7 +1026,7 @@ if __name__ == "__main__":
 
     # 2. MLflow 시작
     mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
-    mlflow.set_experiment("YUMI_CART_DETECTION")
+    # mlflow.set_experiment("YUMI_CART_DETECTION")
 
     with mlflow.start_run(run_name=f"YOLO_DVC_{dvc_hash[:7]}"):
         # 태그 및 파라미터 기록
