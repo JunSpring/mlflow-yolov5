@@ -1031,7 +1031,16 @@ if __name__ == "__main__":
     with mlflow.start_run(run_name=f"YOLO_DVC_{dvc_hash[:7]}"):
         # 태그 및 파라미터 기록
         mlflow.set_tag("dvc.dataset_version", dvc_hash)
-        mlflow.log_params(vars(opt))
+        if RANK in {-1, 0}:
+            # 현재 Run에 이미 기록된 파라미터 목록 가져오기
+            active_run = mlflow.active_run()
+            existing_params = active_run.data.params if active_run else {}
+            
+            # 중복되지 않는 것만 필터링
+            params_to_log = {k: str(v) for k, v in vars(opt).items() if k not in existing_params}
+            
+            if params_to_log:
+                mlflow.log_params(params_to_log)
         
         # 3. 학습 시작
         main(opt)
