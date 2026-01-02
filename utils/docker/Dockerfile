@@ -14,6 +14,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt update
 RUN TZ=Etc/UTC apt install -y tzdata
 RUN apt install --no-install-recommends -y gcc git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg
+RUN git config --global --add safe.directory /usr/src/app
 # RUN alias python=python3
 
 # Security updates
@@ -33,6 +34,9 @@ RUN python3 -m pip install --upgrade pip wheel
 RUN pip install --no-cache -r requirements.txt albumentations comet gsutil notebook \
     coremltools onnx onnx-simplifier onnxruntime 'openvino-dev>=2023.0'
     # tensorflow tensorflowjs \
+
+# mine
+RUN pip install --no-cache mlflow==3.8.1 pyyaml dvc psutil nvidia-ml-py gitpython
 
 # Set environment variables
 ENV OMP_NUM_THREADS=1
