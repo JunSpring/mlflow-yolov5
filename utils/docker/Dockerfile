@@ -24,8 +24,8 @@ RUN apt upgrade --no-install-recommends -y openssl
 RUN rm -rf /usr/src/app && mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-# Copy contents
-COPY . /usr/src/app
+# # Copy contents
+# COPY . /usr/src/app
 
 # Install pip packages
 COPY requirements.txt .

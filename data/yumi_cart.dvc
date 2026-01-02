@@ -1,0 +1,6 @@
+outs:
+- md5: 650442ae1e2afa3ce54c99232894022d.dir
+  size: 714781664
+  nfiles: 7306
+  hash: md5
+  path: yumi_cart

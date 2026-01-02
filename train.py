@@ -38,6 +38,12 @@ import yaml
 from torch.optim import lr_scheduler
 from tqdm import tqdm
 
+import yaml
+import subprocess
+from pathlib import Path
+import mlflow
+import mlflow.pytorch
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -469,6 +475,18 @@ def train(hyp, opt, device, callbacks):
                     callbacks=callbacks,
                     compute_loss=compute_loss,
                 )
+
+                tags = ['metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                    'val/box_loss', 'val/obj_loss', 'val/cls_loss']
+            
+                # results 변수에는 P, R, mAP 등의 값이 순서대로 들어있습니다.
+                for i, tag in enumerate(tags):
+                    mlflow.log_metric(tag, results[i], step=epoch)
+                    
+                # 현재 에폭의 학습 Loss도 함께 기록
+                mlflow.log_metric('train/box_loss', mloss[0], step=epoch)
+                mlflow.log_metric('train/obj_loss', mloss[1], step=epoch)
+                mlflow.log_metric('train/cls_loss', mloss[2], step=epoch)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -981,7 +999,45 @@ def run(**kwargs):
     main(opt)
     return opt
 
+def verify_and_get_dvc_hash():
+    # 1. Git Dirty 체크 (재현성 보장)
+    git_status = subprocess.check_output(["git", "status", "--porcelain"]).decode("utf-8").strip()
+    if git_status:
+        print("\n❌ [ERROR] Git 상태가 Dirty합니다! 커밋 후 실행하세요.\n")
+        return None, False
+
+    # 2. DVC 해시 추출 (데이터 버전 기록)
+    try:
+        with open('data/yumi_cart.dvc', 'r') as f: # data.dvc 위치에 맞게 수정
+            dvc_meta = yaml.safe_load(f)
+            return dvc_meta['outs'][0]['md5'], True
+    except Exception as e:
+        print(f"⚠️ DVC 정보를 읽을 수 없습니다: {e}")
+        return "unknown", True
+
 
 if __name__ == "__main__":
     opt = parse_opt()
-    main(opt)
+    
+    # 1. 환경 검사 (앞서 만든 함수)
+    dvc_hash, is_clean = verify_and_get_dvc_hash()
+    if not is_clean:
+        sys.exit(1)
+
+    # 2. MLflow 시작
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+    mlflow.set_experiment("YUMI_CART_DETECTION")
+
+    with mlflow.start_run(run_name=f"YOLO_DVC_{dvc_hash[:7]}"):
+        # 태그 및 파라미터 기록
+        mlflow.set_tag("dvc.dataset_version", dvc_hash)
+        mlflow.log_params(vars(opt))
+        
+        # 3. 학습 시작
+        main(opt)
+        
+        # 4. 학습 완료 후 베스트 모델 저장
+        # weights/best.pt 경로를 확인하여 업로드
+        best_model_path = str(Path(opt.project) / opt.name / 'weights' / 'best.pt')
+        if os.path.exists(best_model_path):
+            mlflow.log_artifact(best_model_path, artifact_path="model")

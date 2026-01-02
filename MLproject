@@ -1,0 +1,23 @@
+name: YOLOv5-DVC-Project
+
+docker_env:
+  image: mlflow-yolov5:latest
+  volumes: ["/home/junspring/mlflow-yolov5:/usr/src/app"] # 로컬 데이터 연결
+
+entry_points:
+  main:
+    parameters:
+      img: {type: int, default: 640}
+      batch_size: {type: int, default: 16}
+      epochs: {type: int, default: 100}
+      data: {type: string, default: "./data/yumi_cart.yaml"}
+      weights: {type: string, default: "yolov5n.pt"}
+      cfg: {type: string, default: ""}
+    command: |
+      python train.py \
+        --img {img} \
+        --batch {batch_size} \
+        --epochs {epochs} \
+        --data {data} \
+        --weights {weights} \
+        --cfg {cfg} 

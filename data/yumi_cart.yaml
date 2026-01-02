@@ -1,0 +1,10 @@
+path: ./data/yumi_cart
+train: train.txt
+val: val.txt
+
+names:
+- bravo
+- chamkkae_ramen
+- chapssal_hotteong_mix
+- chocobi
+nc: 4
