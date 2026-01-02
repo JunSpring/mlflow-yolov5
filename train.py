@@ -1047,8 +1047,13 @@ if __name__ == "__main__":
         # 3. 학습 시작
         main(opt)
         
-        # 4. 학습 완료 후 베스트 모델 저장
-        # weights/best.pt 경로를 확인하여 업로드
-        best_model_path = str(Path(opt.project) / opt.name / 'weights' / 'best.pt')
-        if os.path.exists(best_model_path):
-            mlflow.log_artifact(best_model_path, artifact_path="model")
+        save_path = Path(opt.save_dir)
+        best_model_path = save_path / 'weights' / 'best.pt'
+        
+        if best_model_path.exists():
+            print(f"📦 모델 발견! MLflow로 업로드 중: {best_model_path}")
+            mlflow.log_artifact(str(best_model_path), artifact_path="model")
+            # 추가로 학습 결과 그래프들도 함께 올리면 좋습니다.
+            mlflow.log_artifacts(str(save_path), artifact_path="plots")
+        else:
+            print(f"⚠️ 모델 파일을 찾을 수 없습니다: {best_model_path}")
