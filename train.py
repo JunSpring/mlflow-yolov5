@@ -1031,6 +1031,25 @@ if __name__ == "__main__":
     mlflow.enable_system_metrics_logging()
 
     with mlflow.start_run(run_name=f"YOLO_DVC_{dvc_hash[:7]}"):
+        try:
+            # YOLO 데이터 설정 파일(.yaml)을 소스로 지정
+            data_path = os.path.abspath(opt.data)
+            
+            # MLflow Dataset 객체 생성
+            # 이미지 데이터는 numpy로 다 읽기 크므로, 파일 시스템 정보를 기반으로 생성합니다.
+            train_ds = mlflow.data.from_filesystem(
+                path=data_path,
+                name="yumi_cart_dataset",
+                digest=dvc_hash # DVC 해시를 데이터 버전으로 기록
+            )
+            
+            # 입력 데이터로 로깅 (UI의 'Inputs' 탭에 나타납니다)
+            mlflow.log_input(train_ds, context="training")
+            print(f"✅ 데이터셋 버전({dvc_hash[:7]}) 기록 완료!")
+            
+        except Exception as e:
+            print(f"⚠️ 데이터셋 기록 중 오류 발생: {e}")
+            
         # 태그 및 파라미터 기록
         mlflow.set_tag("dvc.dataset_version", dvc_hash)
         if RANK in {-1, 0}:
