@@ -43,6 +43,8 @@ import subprocess
 from pathlib import Path
 import mlflow
 import mlflow.pytorch
+import pandas as pd
+import mlflow.data
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -1032,24 +1034,30 @@ if __name__ == "__main__":
 
     with mlflow.start_run(run_name=f"YOLO_DVC_{dvc_hash[:7]}"):
         try:
-            # YOLO 데이터 설정 파일(.yaml)을 소스로 지정
-            data_path = os.path.abspath(opt.data)
-            
-            # MLflow Dataset 객체 생성
-            # 이미지 데이터는 numpy로 다 읽기 크므로, 파일 시스템 정보를 기반으로 생성합니다.
-            train_ds = mlflow.data.from_filesystem(
-                path=data_path,
-                name="yumi_cart_dataset",
-                digest=dvc_hash # DVC 해시를 데이터 버전으로 기록
+            # 데이터셋의 요약 정보를 담은 간단한 데이터프레임 생성
+            dataset_info = pd.DataFrame({
+                "source_path": [os.path.abspath(opt.data)],
+                "dvc_hash": [dvc_hash],
+                "img_size": [opt.imgsz],
+                "project": ["YUMI_CART"]
+            })
+
+            # Pandas를 소스로 하는 MLflow Dataset 객체 생성
+            train_ds = mlflow.data.from_pandas(
+                dataset_info, 
+                name="yumi_cart_dataset", 
+                targets=None, # 객체 탐지는 타겟이 복잡하므로 None 또는 요약 정보
+                source=os.path.abspath(opt.data),
+                digest=dvc_hash # DVC 해시를 데이터 버전으로 사용
             )
             
-            # 입력 데이터로 로깅 (UI의 'Inputs' 탭에 나타납니다)
+            # MLflow Run에 입력 데이터셋으로 로깅
             mlflow.log_input(train_ds, context="training")
-            print(f"✅ 데이터셋 버전({dvc_hash[:7]}) 기록 완료!")
-            
+            print(f"✅ 데이터셋 버전({dvc_hash[:7]}) 기록 성공!")
+
         except Exception as e:
-            print(f"⚠️ 데이터셋 기록 중 오류 발생: {e}")
-            
+            print(f"⚠️ 데이터셋 기록 실패: {e}")
+
         # 태그 및 파라미터 기록
         mlflow.set_tag("dvc.dataset_version", dvc_hash)
         if RANK in {-1, 0}:

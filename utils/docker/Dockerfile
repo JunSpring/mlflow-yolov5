@@ -36,7 +36,7 @@ RUN pip install --no-cache -r requirements.txt albumentations comet gsutil noteb
     # tensorflow tensorflowjs \
 
 # mine
-RUN pip install --no-cache mlflow==3.8.1 pyyaml dvc psutil nvidia-ml-py gitpython
+RUN pip install --no-cache mlflow==3.8.1 pyyaml dvc psutil nvidia-ml-py gitpython pandas
 
 # Set environment variables
 ENV OMP_NUM_THREADS=1
